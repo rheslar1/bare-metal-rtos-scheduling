@@ -6,41 +6,46 @@ Real concurrency, deterministic task design, shared-resource safety, and explain
 
 ## Runtime Shape
 
-1. Hardware or simulator input is sampled through a narrow driver boundary.
-2. A control profile normalizes state into a deterministic decision surface.
-3. Safety checks reject unsafe commands before they reach the actuator, transport, or update path.
-4. Telemetry and validation logs are emitted for repeatable review.
+1. A timer source releases periodic control, ADC, IMU, and telemetry work.
+2. The bare-metal version dispatches tasks from a cooperative superloop.
+3. The RTOS/Linux version maps each task to a thread with priority metadata.
+4. Shared I2C access is protected by a mutex.
+5. ADC conversion ownership is represented by a counting semaphore.
+6. Schedule evidence records release/start/finish timing and deadline misses.
 
 ## C++17 Design Shape
 
-- `ProjectProfile` owns project identity and evidence text.
-- `IReadinessRule` defines a narrow strategy interface for scaffold readiness checks.
-- `RequiredEvidenceRule` is a concrete strategy used by the starter executable and tests.
-- The scaffold keeps documentation, executable behavior, and validation concerns separated.
+- `BareMetalTimerSuperloop` models a timer ISR plus cooperative main loop.
+- `LinuxThreadedRtosRunner` models RTOS-style periodic tasks with Linux threads.
+- `CountingSemaphore` provides a C++17 semaphore stand-in for ADC ownership.
+- `TextScheduleReporter` emits schedule evidence for CI and review.
 
 ## SOLID Notes
 
-- Single Responsibility: profile data and readiness rules are separate.
-- Open/Closed: new readiness rules can be added without changing the profile object.
-- Liskov Substitution: any `IReadinessRule` can replace the default rule.
-- Interface Segregation: the readiness interface exposes only one focused operation.
-- Dependency Inversion: the executable consumes the readiness rule abstraction.
+- Single Responsibility: timer scheduling, thread scheduling, semaphore ownership, and reporting are separated.
+- Open/Closed: new task sets can be added without changing scheduler internals.
+- Liskov Substitution: reports share a common evidence shape across bare-metal and RTOS runners.
+- Interface Segregation: each runner exposes a focused `run` method.
+- Dependency Inversion: tests validate scheduler behavior through public schedule reports.
 
 ## Boundaries
 
-- `src/`: native starter implementation and future device-specific drivers.
+- `include/scheduling/`: task definitions, schedule reports, and scheduler interfaces.
+- `src/`: bare-metal scheduler, Linux-threaded RTOS model, semaphore, and CLI demo.
 - `docs/`: validation plans, timing notes, hardware captures, and acceptance evidence.
-- `tests/`: repo-level smoke tests and future simulator or host-side unit tests.
+- `tests/`: host-side tests for timer, thread, mutex, semaphore, and deadline behavior.
 - `.github/workflows/`: CI entry point for build and validation evidence.
 
 ## Validation Plan
 
-- Build the host starter with CMake.
-- Run the executable and confirm the reported profile matches this repository.
-- Run CTest to validate the C++17 readiness scaffold.
-- Add hardware-specific logs after the first board, simulator, or bus test.
+- Build the host scheduler model with CMake.
+- Run the executable and inspect both bare-metal and Linux-threaded reports.
+- Run CTest to validate dispatch, resource protection, and overload behavior.
+- Add FreeRTOS or Zephyr task trace logs after target hardware integration.
 - Capture CI, terminal, and hardware evidence for the portfolio detail page.
 
 ## Expansion Notes
 
-Replace the starter profile with the project-specific implementation slice while preserving the same review boundaries: build, tests, architecture notes, validation logs, and screenshots.
+- Map the host `TaskSpec` records to FreeRTOS or Zephyr task creation calls.
+- Replace virtual timer ticks with hardware timer ISR captures on target.
+- Keep Linux-threaded tests as a fast regression surface for scheduling tradeoffs.

@@ -4,9 +4,7 @@ Multi-threaded FreeRTOS or Zephyr application with queues, mutexes, semaphores, 
 
 ## Portfolio Purpose
 
-This repository is an Embedded Systems project scaffold for the Rheslar portfolio. It is designed to become a hardware-backed project with build output, validation logs, and reviewable implementation evidence.
-
-All generated Embedded Systems repos are C++17-first and are framed around C++ design patterns and SOLID design principles.
+This repository implements a host-testable scheduler comparison for bare-metal firmware and RTOS-style tasking. It shows a timer-driven cooperative superloop beside a Linux-threaded RTOS model with mutex and semaphore resource boundaries.
 
 ## Stack
 
@@ -31,11 +29,11 @@ ctest --test-dir build --output-on-failure
 
 ## Implementation Slices
 
-- C++17 starter executable that exposes the project identity, stack, and validation target.
-- Small strategy-style readiness check that keeps the scaffold aligned with C++ design patterns.
-- Architecture document with control boundaries, data flow, safety assumptions, and evidence plan.
-- CTest smoke test that keeps source, docs, and CI files present as the repo grows.
-- GitHub Actions workflow for configure, build, executable smoke run, and repository validation.
+- Bare-metal timer superloop with periodic task releases and deadline-jitter evidence.
+- Linux-threaded RTOS model using `std::thread`, mutex-protected I2C work, and a counting semaphore for ADC ownership.
+- Shared task definitions for control loop, ADC sampler, I2C IMU, and telemetry work.
+- Schedule reports showing release, start, finish, priority, runner, and deadline status.
+- CTest coverage for timer dispatch, thread/resource behavior, overload deadline risk, and report evidence.
 
 ## Evidence Target
 

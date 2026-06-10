@@ -1,17 +1,20 @@
 # Validation Plan
 
-## Current Scaffold Checks
+## Current Host Checks
 
 - CMake configure completes.
-- C++17 starter executable builds.
-- Executable prints the project title, SOLID marker, stack, and validation target.
-- CTest verifies the project profile and readiness strategy.
+- C++17 scheduler model builds.
+- Executable prints both bare-metal timer and Linux-threaded RTOS schedule reports.
+- CTest verifies timer dispatch, thread evidence, mutex/semaphore use, and overload deadline risk.
+- GitHub Actions runs configure, build, executable smoke run, and CTest.
 
 ## Hardware Evidence To Add
 
-- Board, simulator, or bus setup photo.
-- Terminal output from the first successful run.
-- Timing, power, memory, or safety measurement relevant to this project.
+- Hardware timer ISR capture from the bare-metal version.
+- FreeRTOS or Zephyr trace showing task priorities and wakeups.
+- Mutex contention log around shared I2C access.
+- ADC semaphore handoff log from ISR to worker task.
+- Deadline and jitter histogram from the target board.
 - CI screenshot after the public repository is pushed.
 
 ## Project-Specific Evidence Target

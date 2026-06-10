@@ -1,63 +1,23 @@
-#include <array>
+#include "scheduling/Scheduler.hpp"
+
 #include <iostream>
-#include <string_view>
-
-class IReadinessRule {
- public:
-  virtual ~IReadinessRule() = default;
-  virtual bool passes(std::string_view evidenceTarget) const = 0;
-  virtual std::string_view name() const = 0;
-};
-
-class RequiredEvidenceRule final : public IReadinessRule {
- public:
-  bool passes(std::string_view evidenceTarget) const override {
-    return !evidenceTarget.empty();
-  }
-
-  std::string_view name() const override {
-    return "RequiredEvidenceRule";
-  }
-};
-
-struct ProjectProfile {
-  std::string_view title;
-  std::string_view summary;
-  std::string_view evidenceTarget;
-  std::array<std::string_view, 9> tags;
-};
-
-constexpr ProjectProfile profile{
-  "Bare-Metal RTOS Scheduling",
-  "Multi-threaded FreeRTOS or Zephyr application with queues, mutexes, semaphores, interrupt handoff, and priority inversion notes.",
-  "Real concurrency, deterministic task design, shared-resource safety, and explainable scheduler tradeoffs.",
-  {
-    "C++17",
-    "C++ Design Patterns",
-    "SOLID",
-    "FreeRTOS",
-    "Zephyr",
-    "IPC",
-    "Mutexes",
-    "Semaphores",
-    "Priority inheritance"
-  }
-};
 
 int main() {
-  const RequiredEvidenceRule readinessRule;
+  const auto tasks = scheduling::demoTasks();
+  scheduling::BareMetalTimerSuperloop bareMetal(tasks);
+  scheduling::LinuxThreadedRtosRunner linuxRtos(tasks);
+  scheduling::TextScheduleReporter reporter(std::cout);
 
-  std::cout << profile.title << '\n';
-  std::cout << "Summary: " << profile.summary << '\n';
-  std::cout << "Evidence target: " << profile.evidenceTarget << '\n';
-  std::cout << "Readiness rule: " << readinessRule.name() << '\n';
-  std::cout << "SOLID marker: C++17 strategy interface with replaceable readiness rule" << '\n';
-  std::cout << "Stack:";
+  std::cout << "Bare-Metal RTOS Scheduling\n";
+  std::cout << "Bare-metal version: timer ISR releases cooperative superloop work\n";
+  std::cout << "RTOS/Linux version: timer-released tasks run on Linux threads with mutex/semaphore guards\n\n";
 
-  for (std::size_t index = 0; index < profile.tags.size(); ++index) {
-    std::cout << ' ' << profile.tags[index] << (index + 1U == profile.tags.size() ? "" : ",");
-  }
-
+  const auto bareMetalReport = bareMetal.run(30U);
+  reporter.publish(bareMetalReport);
   std::cout << '\n';
-  return readinessRule.passes(profile.evidenceTarget) ? 0 : 1;
+
+  const auto linuxReport = linuxRtos.run(30U);
+  reporter.publish(linuxReport);
+
+  return linuxReport.missedDeadlines == 0U ? 0 : 1;
 }
